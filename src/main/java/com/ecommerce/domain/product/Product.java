@@ -2,462 +2,132 @@ package com.ecommerce.domain.product;
 
 import com.ecommerce.domain.common.BaseEntity;
 import com.ecommerce.domain.user.User;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.math.RoundingMode;
+import java.util.*;
 
-/**
- * Product entity representing items available for sale.
- */
-@Entity
-@Table(name = "products", indexes = {
-        @Index(name = "idx_product_sku", columnList = "sku", unique = true),
-        @Index(name = "idx_product_slug", columnList = "slug", unique = true),
-        @Index(name = "idx_product_category", columnList = "category_id"),
-        @Index(name = "idx_product_seller", columnList = "seller_id"),
-        @Index(name = "idx_product_status", columnList = "status"),
-        @Index(name = "idx_product_price", columnList = "price")
-})
 public class Product extends BaseEntity {
 
-    @NotBlank
-    @Size(max = 255)
-    @Column(name = "name", nullable = false)
     private String name;
-
-    @NotBlank
-    @Size(max = 280)
-    @Column(name = "slug", unique = true, nullable = false)
     private String slug;
-
-    @NotBlank
-    @Size(max = 50)
-    @Column(name = "sku", unique = true, nullable = false)
     private String sku;
 
-    @Size(max = 500)
-    @Column(name = "short_description")
-    private String shortDescription;
-
-    @Column(name = "description", columnDefinition = "TEXT")
-    private String description;
-
-    @NotNull
-    @DecimalMin(value = "0.01")
-    @Digits(integer = 10, fraction = 2)
-    @Column(name = "price", nullable = false, precision = 12, scale = 2)
     private BigDecimal price;
-
-    @DecimalMin(value = "0.00")
-    @Digits(integer = 10, fraction = 2)
-    @Column(name = "compare_at_price", precision = 12, scale = 2)
     private BigDecimal compareAtPrice;
 
-    @DecimalMin(value = "0.00")
-    @Digits(integer = 10, fraction = 2)
-    @Column(name = "cost_price", precision = 12, scale = 2)
-    private BigDecimal costPrice;
+    private int stockQuantity;
+    private int reservedQuantity;
+    private int lowStockThreshold;
 
-    @NotNull
-    @Min(0)
-    @Column(name = "stock_quantity", nullable = false)
-    private Integer stockQuantity = 0;
+    private ProductStatus status;
 
-    @Min(0)
-    @Column(name = "low_stock_threshold")
-    private Integer lowStockThreshold = 10;
-
-    @Min(0)
-    @Column(name = "reserved_quantity")
-    private Integer reservedQuantity = 0;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private ProductStatus status = ProductStatus.DRAFT;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
     private Category category;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "seller_id")
     private User seller;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("displayOrder ASC")
-    private List<ProductImage> images = new ArrayList<>();
+    private final List<ProductImage> images = new ArrayList<>();
+    private final Set<String> tags = new HashSet<>();
 
-    @ElementCollection
-    @CollectionTable(name = "product_tags", joinColumns = @JoinColumn(name = "product_id"))
-    @Column(name = "tag")
-    private Set<String> tags = new HashSet<>();
+    private BigDecimal averageRating;
+    private int reviewCount;
+    private int totalSales;
 
-    @Column(name = "weight")
-    private Double weight;
+    private boolean featured;
+    private boolean digital;
+    private boolean requiresShipping;
 
-    @Column(name = "weight_unit")
-    private String weightUnit = "kg";
+    // ================== CONSTRUCTOR ==================
 
-    @Column(name = "length")
-    private Double length;
+    public Product(String name, String slug, String sku, BigDecimal price, int stockQuantity) {
+        validateName(name);
+        validatePrice(price);
 
-    @Column(name = "width")
-    private Double width;
+        this.name = name;
+        this.slug = Objects.requireNonNull(slug);
+        this.sku = Objects.requireNonNull(sku);
+        this.price = price;
 
-    @Column(name = "height")
-    private Double height;
-
-    @Column(name = "dimension_unit")
-    private String dimensionUnit = "cm";
-
-    @Column(name = "average_rating", precision = 3, scale = 2)
-    private BigDecimal averageRating = BigDecimal.ZERO;
-
-    @Column(name = "review_count")
-    private Integer reviewCount = 0;
-
-    @Column(name = "total_sales")
-    private Integer totalSales = 0;
-
-    @Column(name = "is_featured")
-    private boolean featured = false;
-
-    @Column(name = "is_digital")
-    private boolean digital = false;
-
-    @Column(name = "requires_shipping")
-    private boolean requiresShipping = true;
-
-    @Column(name = "meta_title")
-    @Size(max = 70)
-    private String metaTitle;
-
-    @Column(name = "meta_description")
-    @Size(max = 160)
-    private String metaDescription;
-
-    public Product() {
-        this.stockQuantity = 0;
-        this.lowStockThreshold = 10;
+        this.stockQuantity = stockQuantity;
         this.reservedQuantity = 0;
+        this.lowStockThreshold = 10;
+
         this.status = ProductStatus.DRAFT;
-        this.images = new ArrayList<>();
-        this.tags = new HashSet<>();
-        this.weightUnit = "kg";
-        this.dimensionUnit = "cm";
+
         this.averageRating = BigDecimal.ZERO;
         this.reviewCount = 0;
         this.totalSales = 0;
-        this.featured = false;
-        this.digital = false;
+
         this.requiresShipping = true;
     }
 
-    // Getters and Setters
-    public String getName() {
-        return name;
+    // ================== BEHAVIOR ==================
+
+    public void activate() {
+        if (price.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalStateException("Cannot activate product with invalid price");
+        }
+        this.status = ProductStatus.ACTIVE;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void deactivate() {
+        this.status = ProductStatus.INACTIVE;
     }
 
-    public String getSlug() {
-        return slug;
-    }
-
-    public void setSlug(String slug) {
-        this.slug = slug;
-    }
-
-    public String getSku() {
-        return sku;
-    }
-
-    public void setSku(String sku) {
-        this.sku = sku;
-    }
-
-    public String getShortDescription() {
-        return shortDescription;
-    }
-
-    public void setShortDescription(String shortDescription) {
-        this.shortDescription = shortDescription;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
-
-    public BigDecimal getCompareAtPrice() {
-        return compareAtPrice;
+    public void changePrice(BigDecimal newPrice) {
+        validatePrice(newPrice);
+        this.price = newPrice;
     }
 
     public void setCompareAtPrice(BigDecimal compareAtPrice) {
+        if (compareAtPrice != null && compareAtPrice.compareTo(price) < 0) {
+            throw new IllegalArgumentException("Compare price must be greater than actual price");
+        }
         this.compareAtPrice = compareAtPrice;
     }
 
-    public BigDecimal getCostPrice() {
-        return costPrice;
-    }
-
-    public void setCostPrice(BigDecimal costPrice) {
-        this.costPrice = costPrice;
-    }
-
-    public Integer getStockQuantity() {
-        return stockQuantity;
-    }
-
-    public void setStockQuantity(Integer stockQuantity) {
-        this.stockQuantity = stockQuantity;
-    }
-
-    public Integer getLowStockThreshold() {
-        return lowStockThreshold;
-    }
-
-    public void setLowStockThreshold(Integer lowStockThreshold) {
-        this.lowStockThreshold = lowStockThreshold;
-    }
-
-    public Integer getReservedQuantity() {
-        return reservedQuantity;
-    }
-
-    public void setReservedQuantity(Integer reservedQuantity) {
-        this.reservedQuantity = reservedQuantity;
-    }
-
-    public ProductStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(ProductStatus status) {
-        this.status = status;
-    }
-
-    public Category getCategory() {
-        return category;
-    }
-
-    public void setCategory(Category category) {
-        this.category = category;
-    }
-
-    public User getSeller() {
-        return seller;
-    }
-
-    public void setSeller(User seller) {
-        this.seller = seller;
-    }
-
-    public List<ProductImage> getImages() {
-        return images;
-    }
-
-    public void setImages(List<ProductImage> images) {
-        this.images = images;
-    }
-
-    public Set<String> getTags() {
-        return tags;
-    }
-
-    public void setTags(Set<String> tags) {
-        this.tags = tags;
-    }
-
-    public Double getWeight() {
-        return weight;
-    }
-
-    public void setWeight(Double weight) {
-        this.weight = weight;
-    }
-
-    public String getWeightUnit() {
-        return weightUnit;
-    }
-
-    public void setWeightUnit(String weightUnit) {
-        this.weightUnit = weightUnit;
-    }
-
-    public Double getLength() {
-        return length;
-    }
-
-    public void setLength(Double length) {
-        this.length = length;
-    }
-
-    public Double getWidth() {
-        return width;
-    }
-
-    public void setWidth(Double width) {
-        this.width = width;
-    }
-
-    public Double getHeight() {
-        return height;
-    }
-
-    public void setHeight(Double height) {
-        this.height = height;
-    }
-
-    public String getDimensionUnit() {
-        return dimensionUnit;
-    }
-
-    public void setDimensionUnit(String dimensionUnit) {
-        this.dimensionUnit = dimensionUnit;
-    }
-
-    public BigDecimal getAverageRating() {
-        return averageRating;
-    }
-
-    public void setAverageRating(BigDecimal averageRating) {
-        this.averageRating = averageRating;
-    }
-
-    public Integer getReviewCount() {
-        return reviewCount;
-    }
-
-    public void setReviewCount(Integer reviewCount) {
-        this.reviewCount = reviewCount;
-    }
-
-    public Integer getTotalSales() {
-        return totalSales;
-    }
-
-    public void setTotalSales(Integer totalSales) {
-        this.totalSales = totalSales;
-    }
-
-    public boolean isFeatured() {
-        return featured;
-    }
-
-    public void setFeatured(boolean featured) {
-        this.featured = featured;
-    }
-
-    public boolean isDigital() {
-        return digital;
-    }
-
-    public void setDigital(boolean digital) {
-        this.digital = digital;
-    }
-
-    public boolean isRequiresShipping() {
-        return requiresShipping;
-    }
-
-    public void setRequiresShipping(boolean requiresShipping) {
-        this.requiresShipping = requiresShipping;
-    }
-
-    public String getMetaTitle() {
-        return metaTitle;
-    }
-
-    public void setMetaTitle(String metaTitle) {
-        this.metaTitle = metaTitle;
-    }
-
-    public String getMetaDescription() {
-        return metaDescription;
-    }
-
-    public void setMetaDescription(String metaDescription) {
-        this.metaDescription = metaDescription;
-    }
-
-    // ================== Business Methods ==================
-
-    public int getAvailableQuantity() {
-        return stockQuantity - reservedQuantity;
-    }
-
-    public boolean isInStock() {
-        return getAvailableQuantity() > 0;
-    }
-
-    public boolean isLowStock() {
-        return getAvailableQuantity() <= lowStockThreshold;
-    }
-
-    public boolean isAvailable() {
-        return status == ProductStatus.ACTIVE && isInStock() && !isDeleted();
+    public void increaseStock(int quantity) {
+        if (quantity <= 0) throw new IllegalArgumentException("Quantity must be positive");
+        this.stockQuantity += quantity;
     }
 
     public void reserveStock(int quantity) {
+        if (quantity <= 0) throw new IllegalArgumentException("Quantity must be positive");
+
         if (quantity > getAvailableQuantity()) {
-            throw new IllegalStateException("Insufficient stock available");
+            throw new InsufficientStockException("Not enough stock");
         }
+
         this.reservedQuantity += quantity;
     }
 
     public void releaseStock(int quantity) {
+        if (quantity <= 0) throw new IllegalArgumentException("Quantity must be positive");
+
         this.reservedQuantity = Math.max(0, this.reservedQuantity - quantity);
     }
 
     public void confirmSale(int quantity) {
+        if (quantity <= 0) throw new IllegalArgumentException("Quantity must be positive");
+
+        if (quantity > reservedQuantity) {
+            throw new IllegalStateException("Cannot confirm more than reserved");
+        }
+
         this.stockQuantity -= quantity;
         this.reservedQuantity -= quantity;
         this.totalSales += quantity;
     }
 
-    public String getPrimaryImageUrl() {
-        return images.stream()
-                .filter(ProductImage::isPrimary)
-                .findFirst()
-                .map(ProductImage::getUrl)
-                .orElse(images.isEmpty() ? null : images.get(0).getUrl());
-    }
-
-    public int getDiscountPercentage() {
-        if (compareAtPrice == null || compareAtPrice.compareTo(price) <= 0) {
-            return 0;
-        }
-        return compareAtPrice.subtract(price)
-                .divide(compareAtPrice, 2, java.math.RoundingMode.HALF_UP)
-                .multiply(BigDecimal.valueOf(100))
-                .intValue();
-    }
-
     public void addImage(ProductImage image) {
-        images.add(image);
+        Objects.requireNonNull(image);
+
         image.setProduct(this);
-        if (images.size() == 1) {
+
+        if (images.isEmpty()) {
             image.setPrimary(true);
         }
+
+        images.add(image);
     }
 
     public void removeImage(ProductImage image) {
@@ -465,10 +135,73 @@ public class Product extends BaseEntity {
         image.setProduct(null);
     }
 
+    public void addTag(String tag) {
+        if (tag == null || tag.isBlank()) return;
+        tags.add(tag);
+    }
+
+    public void assignCategory(Category category) {
+        this.category = Objects.requireNonNull(category);
+    }
+
+    public void assignSeller(User seller) {
+        this.seller = Objects.requireNonNull(seller);
+    }
+
     public void updateRating(BigDecimal newRating) {
-        BigDecimal totalRating = averageRating.multiply(BigDecimal.valueOf(reviewCount));
+        if (newRating == null || newRating.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Invalid rating");
+        }
+
+        BigDecimal total = averageRating.multiply(BigDecimal.valueOf(reviewCount));
         reviewCount++;
-        averageRating = totalRating.add(newRating)
-                .divide(BigDecimal.valueOf(reviewCount), 2, java.math.RoundingMode.HALF_UP);
+
+        averageRating = total.add(newRating)
+                .divide(BigDecimal.valueOf(reviewCount), 2, RoundingMode.HALF_UP);
+    }
+
+    // ================== QUERY METHODS ==================
+
+    public int getAvailableQuantity() {
+        return stockQuantity - reservedQuantity;
+    }
+
+    public boolean isAvailable() {
+        return status == ProductStatus.ACTIVE && getAvailableQuantity() > 0;
+    }
+
+    public boolean isLowStock() {
+        return getAvailableQuantity() <= lowStockThreshold;
+    }
+
+    public int getDiscountPercentage() {
+        if (compareAtPrice == null || compareAtPrice.compareTo(price) <= 0) return 0;
+
+        return compareAtPrice.subtract(price)
+                .divide(compareAtPrice, 2, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .intValue();
+    }
+
+    public List<ProductImage> getImages() {
+        return Collections.unmodifiableList(images);
+    }
+
+    public Set<String> getTags() {
+        return Collections.unmodifiableSet(tags);
+    }
+
+    // ================== VALIDATION ==================
+
+    private void validateName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Product name cannot be empty");
+        }
+    }
+
+    private void validatePrice(BigDecimal price) {
+        if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Invalid price");
+        }
     }
 }
