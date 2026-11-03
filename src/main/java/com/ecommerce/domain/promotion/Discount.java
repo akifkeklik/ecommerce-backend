@@ -38,7 +38,7 @@ public class Discount extends BaseEntity {
 
     @NotNull
     @DecimalMin(value = "0.01")
-    @Column(name = "value", nullable = false, precision = 12, scale = 2)
+    @Column(name = "\"value\"", nullable = false, precision = 12, scale = 2)
     private BigDecimal value;
 
     @DecimalMin(value = "0.00")
