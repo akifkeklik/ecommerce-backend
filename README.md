@@ -64,7 +64,21 @@ $bytes = New-Object byte[] 32
 [Convert]::ToBase64String($bytes)
 ```
 
-Paste the generated value into `.env` as `JWT_SECRET`. Do not use a committed or shared signing key.
+Paste the generated value into `.env` as `JWT_SECRET` for Docker Compose. Do not use a committed or shared signing key.
+
+When running Maven directly, `.env` is not loaded automatically by Spring Boot. Set the variable in the terminal too:
+
+Linux / macOS:
+
+```bash
+export JWT_SECRET="$(openssl rand -base64 32)"
+```
+
+PowerShell (paste the generated value):
+
+```powershell
+$env:JWT_SECRET = "PASTE_GENERATED_VALUE_HERE"
+```
 
 ### 3. Start the database and supporting services
 
