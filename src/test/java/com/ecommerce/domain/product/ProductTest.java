@@ -72,7 +72,7 @@ class ProductTest {
     @DisplayName("Should throw exception when reserving more than available")
     void reserveStock_InsufficientStock_ThrowsException() {
         assertThatThrownBy(() -> product.reserveStock(100))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(com.ecommerce.domain.exception.InsufficientStockException.class)
                 .hasMessageContaining("Insufficient stock");
     }
 
