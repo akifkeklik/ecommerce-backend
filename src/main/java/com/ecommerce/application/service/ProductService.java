@@ -46,14 +46,14 @@ public class ProductService {
     @Transactional(readOnly = true)
     @Cacheable(value = "products", key = "#id")
     public ProductDto getProductById(UUID id) {
-        Product product = productRepository.findById(id)
+        Product product = productRepository.findActiveById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Product", id));
         return toDto(product);
     }
 
     @Transactional(readOnly = true)
     public ProductDto getProductBySlug(String slug) {
-        Product product = productRepository.findBySlug(slug)
+        Product product = productRepository.findActiveBySlug(slug)
                 .orElseThrow(() -> new EntityNotFoundException("Product", slug));
         return toDto(product);
     }
@@ -136,12 +136,46 @@ public class ProductService {
     }
 
     @Transactional
+    @CacheEvict(value = "products", key = "#productId")
+    public void updateStock(UUID productId, int quantity, User currentUser) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new EntityNotFoundException("Product", productId));
+        assertCanManageProduct(product, currentUser);
+        product.setStockQuantity(quantity);
+        productRepository.save(product);
+    }
+
+    @Transactional
     @CacheEvict(value = { "products", "featured-products" }, allEntries = true)
     public ProductDto publishProduct(UUID productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new EntityNotFoundException("Product", productId));
         product.setStatus(ProductStatus.ACTIVE);
         return toDto(productRepository.save(product));
+    }
+
+    @Transactional
+    @CacheEvict(value = { "products", "featured-products" }, allEntries = true)
+    public ProductDto publishProduct(UUID productId, User currentUser) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new EntityNotFoundException("Product", productId));
+        assertCanManageProduct(product, currentUser);
+        product.setStatus(ProductStatus.ACTIVE);
+        return toDto(productRepository.save(product));
+    }
+
+    private void assertCanManageProduct(Product product, User currentUser) {
+        if (currentUser == null) {
+            throw new org.springframework.security.access.AccessDeniedException("Authentication required");
+        }
+
+        boolean isAdmin = currentUser.getRole() == com.ecommerce.domain.user.Role.ADMIN;
+        boolean isOwner = product.getSeller() != null
+                && product.getSeller().getId().equals(currentUser.getId());
+
+        if (!isAdmin && !isOwner) {
+            throw new org.springframework.security.access.AccessDeniedException("You cannot manage this product");
+        }
     }
 
     private String generateSlug(String name) {
