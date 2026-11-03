@@ -194,6 +194,13 @@ public class Product extends BaseEntity {
         this.totalSales += quantity;
     }
 
+    /** Restores stock when a previously confirmed order is cancelled. */
+    public void reverseSale(int quantity) {
+        if (quantity <= 0) throw new IllegalArgumentException("Quantity must be positive");
+        this.stockQuantity += quantity;
+        this.totalSales = Math.max(0, this.totalSales - quantity);
+    }
+
     public void addImage(ProductImage image) {
         Objects.requireNonNull(image, "image is required");
         image.setProduct(this);
