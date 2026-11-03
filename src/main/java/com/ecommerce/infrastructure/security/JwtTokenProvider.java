@@ -1,6 +1,7 @@
 package com.ecommerce.infrastructure.security;
 
 import io.jsonwebtoken.*;
+import jakarta.annotation.PostConstruct;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
@@ -30,6 +31,20 @@ public class JwtTokenProvider {
 
     @Value("${jwt.refresh-token.expiration}")
     private long refreshTokenExpiration;
+
+    @PostConstruct
+    void validateSigningKey() {
+        final byte[] keyBytes;
+        try {
+            keyBytes = Decoders.BASE64.decode(jwtSecret);
+        } catch (RuntimeException ex) {
+            throw new IllegalStateException("JWT_SECRET must be a valid Base64-encoded key", ex);
+        }
+
+        if (keyBytes.length < 32) {
+            throw new IllegalStateException("JWT_SECRET must decode to at least 32 bytes (256 bits)");
+        }
+    }
 
     public String generateAccessToken(Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
