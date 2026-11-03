@@ -57,23 +57,28 @@ public class OrderController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get order by ID")
-    public ResponseEntity<OrderDto> getOrder(@PathVariable UUID id) {
-        return ResponseEntity.ok(orderService.getOrder(id));
+    public ResponseEntity<OrderDto> getOrder(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(orderService.getOrder(id, user));
     }
 
     @GetMapping("/number/{orderNumber}")
     @Operation(summary = "Get order by order number")
-    public ResponseEntity<OrderDto> getOrderByNumber(@PathVariable String orderNumber) {
-        return ResponseEntity.ok(orderService.getOrderByNumber(orderNumber));
+    public ResponseEntity<OrderDto> getOrderByNumber(
+            @PathVariable String orderNumber,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(orderService.getOrderByNumber(orderNumber, user));
     }
 
     @PostMapping("/{id}/cancel")
     @Operation(summary = "Cancel an order")
     public ResponseEntity<OrderDto> cancelOrder(
             @PathVariable UUID id,
-            @RequestParam(required = false) String reason) {
+            @RequestParam(required = false) String reason,
+            @AuthenticationPrincipal User user) {
 
-        return ResponseEntity.ok(orderService.cancelOrder(id, reason));
+        return ResponseEntity.ok(orderService.cancelOrder(id, reason, user));
     }
 
     @PatchMapping("/{id}/status")
