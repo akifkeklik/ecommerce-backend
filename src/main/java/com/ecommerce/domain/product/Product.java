@@ -376,6 +376,14 @@ public class Product extends BaseEntity {
         return Collections.unmodifiableList(images);
     }
 
+    public String getPrimaryImageUrl() {
+        return images.stream()
+                .filter(ProductImage::isPrimary)
+                .findFirst()
+                .map(ProductImage::getUrl)
+                .orElseGet(() -> images.isEmpty() ? null : images.get(0).getUrl());
+    }
+
     public Set<String> getTags() {
         return Collections.unmodifiableSet(tags);
     }
