@@ -103,6 +103,15 @@ public class OrderService {
         return toDto(order);
     }
 
+    /** Returns an order only to its owner or an administrator. */
+    @Transactional(readOnly = true)
+    public OrderDto getOrder(UUID orderId, User currentUser) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Order", orderId));
+        assertCanAccessOrder(order, currentUser);
+        return toDto(order);
+    }
+
     /**
      * Gets an order by order number.
      */
@@ -110,6 +119,15 @@ public class OrderService {
     public OrderDto getOrderByNumber(String orderNumber) {
         Order order = orderRepository.findByOrderNumber(orderNumber)
                 .orElseThrow(() -> new EntityNotFoundException("Order", orderNumber));
+        return toDto(order);
+    }
+
+    /** Returns an order by number only to its owner or an administrator. */
+    @Transactional(readOnly = true)
+    public OrderDto getOrderByNumber(String orderNumber, User currentUser) {
+        Order order = orderRepository.findByOrderNumber(orderNumber)
+                .orElseThrow(() -> new EntityNotFoundException("Order", orderNumber));
+        assertCanAccessOrder(order, currentUser);
         return toDto(order);
     }
 
@@ -152,7 +170,19 @@ public class OrderService {
     public OrderDto cancelOrder(UUID orderId, String reason) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Order", orderId));
+        return cancelOrderEntity(order, reason);
+    }
 
+    /** A customer may cancel only their own order; administrators may cancel any order. */
+    @Transactional
+    public OrderDto cancelOrder(UUID orderId, String reason, User currentUser) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Order", orderId));
+        assertCanAccessOrder(order, currentUser);
+        return cancelOrderEntity(order, reason);
+    }
+
+    private OrderDto cancelOrderEntity(Order order, String reason) {
         if (!order.isCancellable()) {
             throw new IllegalStateException("Order cannot be cancelled in current state");
         }
@@ -168,8 +198,21 @@ public class OrderService {
 
         order = orderRepository.save(order);
         log.info("Order cancelled: {} - Reason: {}", order.getOrderNumber(), reason);
-
         return toDto(order);
+    }
+
+    private void assertCanAccessOrder(Order order, User currentUser) {
+        if (currentUser == null) {
+            throw new org.springframework.security.access.AccessDeniedException("Authentication required");
+        }
+
+        boolean isAdmin = currentUser.getRole() == com.ecommerce.domain.user.Role.ADMIN;
+        boolean isOwner = order.getUser() != null
+                && order.getUser().getId().equals(currentUser.getId());
+
+        if (!isAdmin && !isOwner) {
+            throw new org.springframework.security.access.AccessDeniedException("You cannot access this order");
+        }
     }
 
     /**
