@@ -63,7 +63,7 @@ public class OrderService {
 
         // Process items
         for (CreateOrderRequest.OrderItemRequest itemRequest : request.getItems()) {
-            Product product = productRepository.findById(UUID.fromString(itemRequest.getProductId()))
+            Product product = productRepository.findActiveById(UUID.fromString(itemRequest.getProductId()))
                     .orElseThrow(() -> new EntityNotFoundException("Product", itemRequest.getProductId()));
 
             // Check and reserve stock
