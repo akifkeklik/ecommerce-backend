@@ -7,6 +7,7 @@ import com.ecommerce.domain.cart.CartItem;
 import com.ecommerce.domain.exception.EntityNotFoundException;
 import com.ecommerce.domain.exception.InsufficientStockException;
 import com.ecommerce.domain.product.Product;
+import com.ecommerce.domain.product.ProductStatus;
 import com.ecommerce.domain.user.User;
 import com.ecommerce.infrastructure.repository.CartRepository;
 import com.ecommerce.infrastructure.repository.ProductRepository;
@@ -117,6 +118,9 @@ public class CartService {
         if (quantity <= 0) {
             cart.removeItem(item);
         } else {
+            if (item.getProduct().getStatus() != ProductStatus.ACTIVE || item.getProduct().isDeleted()) {
+                throw new EntityNotFoundException("Product", item.getProduct().getId());
+            }
             if (item.getProduct().getAvailableQuantity() < quantity) {
                 throw new InsufficientStockException(
                         item.getProduct().getSku(),
@@ -198,7 +202,7 @@ public class CartService {
                     itemDto.setUnitPrice(item.getUnitPrice());
                     itemDto.setQuantity(item.getQuantity());
                     itemDto.setTotal(item.getTotal());
-                    itemDto.setInStock(item.getProduct().isInStock());
+                    itemDto.setInStock(item.getProduct().isAvailable());
                     itemDto.setAvailableQuantity(item.getProduct().getAvailableQuantity());
                     return itemDto;
                 })
