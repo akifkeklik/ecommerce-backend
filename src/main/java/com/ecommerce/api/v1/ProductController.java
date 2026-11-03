@@ -44,7 +44,7 @@ public class ProductController {
             @Parameter(description = "Sort direction") @RequestParam(defaultValue = "desc") String sortDir) {
 
         Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
+        Pageable pageable = PageRequest.of(Math.max(0, page), Math.min(100, Math.max(1, size)), sort);
 
         return ResponseEntity.ok(productService.getAllProducts(pageable));
     }
@@ -68,7 +68,7 @@ public class ProductController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(Math.max(0, page), Math.min(100, Math.max(1, size)));
         return ResponseEntity.ok(productService.getProductsByCategory(categoryId, pageable));
     }
 
