@@ -19,7 +19,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Rate limiting filter using Bucket4j.
+ * Per-client rate limiting. The remote address is used deliberately:
+ * X-Forwarded-For and X-Real-IP are client-controlled unless a trusted-proxy
+ * chain is explicitly configured.
  */
 @Component
 @Order(1)
@@ -44,7 +46,6 @@ public class RateLimitFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
-
         if (!enabled) {
             chain.doFilter(request, response);
             return;
@@ -53,41 +54,28 @@ public class RateLimitFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-        String clientId = getClientIdentifier(httpRequest);
+        String clientId = httpRequest.getRemoteAddr();
         Bucket bucket = buckets.computeIfAbsent(clientId, this::createBucket);
 
         if (bucket.tryConsume(1)) {
-            // Add rate limit headers
-            httpResponse.addHeader("X-Rate-Limit-Remaining",
+            httpResponse.setHeader("X-Rate-Limit-Remaining",
                     String.valueOf(bucket.getAvailableTokens()));
             chain.doFilter(request, response);
-        } else {
-            log.warn("Rate limit exceeded for client: {}", clientId);
-            httpResponse.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-            httpResponse.setContentType("application/json");
-            httpResponse.getWriter().write(
-                    "{\"error\":\"Too many requests\",\"message\":\"Rate limit exceeded. Please try again later.\"}");
+            return;
         }
+
+        log.warn("Rate limit exceeded for remote address: {}", clientId);
+        httpResponse.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+        httpResponse.setContentType("application/json");
+        httpResponse.setCharacterEncoding("UTF-8");
+        httpResponse.getWriter().write(
+                "{\"error\":\"Too many requests\",\"message\":\"Rate limit exceeded. Please try again later.\"}");
     }
 
     private Bucket createBucket(String clientId) {
-        Bandwidth limit = Bandwidth.classic(capacity,
+        Bandwidth limit = Bandwidth.classic(
+                capacity,
                 Refill.greedy(refillTokens, Duration.ofSeconds(refillDuration)));
         return Bucket.builder().addLimit(limit).build();
-    }
-
-    private String getClientIdentifier(HttpServletRequest request) {
-        // Try to get real IP behind proxy
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty()) {
-            return xRealIp;
-        }
-
-        return request.getRemoteAddr();
     }
 }
