@@ -32,7 +32,7 @@ public class Promotion extends BaseEntity {
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
+    @Column(name = "type", nullable = false, length = 30)
     private DiscountType type;
 
     @Column(name = "\"value\"", precision = 12, scale = 2)
@@ -50,7 +50,7 @@ public class Promotion extends BaseEntity {
     @Column(name = "priority")
     private Integer priority = 0;
 
-    @Column(name = "banner_image")
+    @Column(name = "banner_image", length = 500)
     private String bannerImage;
 
     @Column(name = "badge_text")
