@@ -25,6 +25,12 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
 
     Optional<Product> findBySlug(String slug);
 
+    @Query("SELECT p FROM Product p WHERE p.id = :id AND p.status = 'ACTIVE' AND p.deleted = false")
+    Optional<Product> findActiveById(@Param("id") UUID id);
+
+    @Query("SELECT p FROM Product p WHERE p.slug = :slug AND p.status = 'ACTIVE' AND p.deleted = false")
+    Optional<Product> findActiveBySlug(@Param("slug") String slug);
+
     boolean existsBySku(String sku);
 
     boolean existsBySlug(String slug);
@@ -47,7 +53,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     @Query("SELECT p FROM Product p WHERE p.stockQuantity <= p.lowStockThreshold AND p.deleted = false")
     List<Product> findLowStockProducts();
 
-    @Query("SELECT p FROM Product p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :query, '%'))")
+    @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND p.deleted = false AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :query, '%')))")
     Page<Product> searchProducts(@Param("query") String query, Pageable pageable);
 
     @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND p.deleted = false AND p.price BETWEEN :minPrice AND :maxPrice")
