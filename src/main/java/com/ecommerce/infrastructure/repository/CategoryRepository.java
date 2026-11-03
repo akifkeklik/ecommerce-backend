@@ -3,6 +3,7 @@ package com.ecommerce.infrastructure.repository;
 import com.ecommerce.domain.product.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -15,7 +16,8 @@ import java.util.UUID;
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, UUID> {
 
-    Optional<Category> findBySlug(String slug);
+    @Query("SELECT c FROM Category c WHERE c.slug = :slug AND c.active = true AND c.deleted = false")
+    Optional<Category> findBySlug(@Param("slug") String slug);
 
     boolean existsBySlug(String slug);
 
