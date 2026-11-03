@@ -61,6 +61,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reviews/**").permitAll()
 
+                        // Guest carts are isolated by the servlet session ID.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/cart").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/cart/items").permitAll()
+
                         // Admin only endpoints
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
 
