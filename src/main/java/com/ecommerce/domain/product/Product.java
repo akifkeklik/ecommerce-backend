@@ -173,7 +173,7 @@ public class Product extends BaseEntity {
     public void reserveStock(int quantity) {
         if (quantity <= 0) throw new IllegalArgumentException("Quantity must be positive");
         if (quantity > getAvailableQuantity()) {
-            throw new InsufficientStockException("Not enough stock");
+            throw new InsufficientStockException(sku, quantity, getAvailableQuantity());
         }
         this.reservedQuantity += quantity;
     }
