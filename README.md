@@ -9,7 +9,8 @@ The repository is a learning and portfolio project. The core API areas are authe
 - **Authentication:** registration, login, refresh, and logout
 - **Products:** product listing, search, product creation, publishing, and stock updates
 - **Cart:** customer cart management; guest-session cart view/add with merge after login
-- **Orders:** order creation, customer order history, cancellation, and administrator status operations
+- **Orders:** order creation, customer order history, cancellation, and administrator-controlled fulfilment status transitions
+- **Stock handling:** order creation reserves stock under a database row lock; cancellation releases pending reservations or restores stock from confirmed orders
 - **Infrastructure:** PostgreSQL, Flyway migrations, Spring Security, JWT, Docker Compose, and OpenAPI documentation
 
 ## Technology
@@ -128,6 +129,10 @@ mvn test
 ```
 
 The test configuration uses an in-memory H2 database and a test-only JWT secret.
+
+## License
+
+No license file is currently included. All rights remain with the author unless a license is added.
 
 ## Scope and limitations
 
