@@ -1,11 +1,10 @@
 spring:
   application:
     name: ecommerce-backend
-
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ecommerce}
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    password: ${DB_PASSWORD:}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 20
@@ -13,7 +12,6 @@ spring:
       idle-timeout: 300000
       connection-timeout: 20000
       max-lifetime: 1200000
-
   jpa:
     hibernate:
       ddl-auto: validate
@@ -26,12 +24,10 @@ spring:
           batch_size: 50
         order_inserts: true
         order_updates: true
-
   flyway:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
-
   data:
     redis:
       enabled: ${REDIS_ENABLED:false}
@@ -39,14 +35,11 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
       timeout: 60000
-
   cache:
     type: simple
     redis:
       time-to-live: 3600000
       cache-null-values: false
-
-  # MailHog (local)
   mail:
     host: ${MAIL_HOST:localhost}
     port: ${MAIL_PORT:1025}
@@ -58,17 +51,14 @@ spring:
           auth: false
           starttls:
             enable: false
-
   thymeleaf:
-    check-template-location: false  # templates yok uyarısını susturur
-
+    check-template-location: false
   servlet:
     multipart:
       enabled: true
       max-file-size: 10MB
       max-request-size: 50MB
       file-size-threshold: 2KB
-
   jackson:
     serialization:
       write-dates-as-timestamps: false
@@ -76,23 +66,21 @@ spring:
     deserialization:
       fail-on-unknown-properties: false
     default-property-inclusion: non_null
-
 server:
   port: ${SERVER_PORT:8080}
   error:
-    include-message: always
-    include-binding-errors: always
+    include-message: never
+    include-binding-errors: never
   compression:
     enabled: true
     mime-types: application/json,application/xml,text/html,text/xml,text/plain
-
 jwt:
-  secret: ${JWT_SECRET:your-256-bit-secret-key-for-jwt-token-generation-minimum-32-chars}
+  # Supply a Base64-encoded key with at least 256 bits of entropy via JWT_SECRET.
+  secret: ${JWT_SECRET}
   access-token:
     expiration: 900000
   refresh-token:
     expiration: 604800000
-
 payment:
   stripe:
     api-key: ${STRIPE_API_KEY:}
@@ -101,12 +89,10 @@ payment:
     client-id: ${PAYPAL_CLIENT_ID:}
     client-secret: ${PAYPAL_CLIENT_SECRET:}
     mode: ${PAYPAL_MODE:sandbox}
-
 storage:
   upload-dir: ${UPLOAD_DIR:./uploads}
   allowed-extensions: jpg,jpeg,png,gif,webp
   max-file-size: 10485760
-
 springdoc:
   api-docs:
     path: /api-docs
@@ -118,7 +104,6 @@ springdoc:
     tags-sorter: alpha
     display-request-duration: true
   show-actuator: true
-
 management:
   endpoints:
     web:
@@ -131,7 +116,6 @@ management:
   info:
     env:
       enabled: true
-
 logging:
   level:
     root: INFO
@@ -139,15 +123,13 @@ logging:
     org.springframework.security: INFO
   file:
     name: logs/ecommerce.log
-
 rate-limit:
   enabled: true
   capacity: 100
   refill-tokens: 100
   refill-duration: 60
-
 info:
   app:
     name: E-Commerce Backend
-    description: Professional E-Commerce Backend System
+    description: E-Commerce Backend API
     version: 1.0.0
