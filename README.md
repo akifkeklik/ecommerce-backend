@@ -8,7 +8,7 @@ The repository is a learning and portfolio project. The core API areas are authe
 
 - **Authentication:** registration, login, refresh, and logout
 - **Products:** product listing, search, product creation, publishing, and stock updates
-- **Cart:** customer and guest-session cart operations
+- **Cart:** customer cart management; guest-session cart view/add with merge after login
 - **Orders:** order creation, customer order history, cancellation, and administrator status operations
 - **Infrastructure:** PostgreSQL, Flyway migrations, Spring Security, JWT, Docker Compose, and OpenAPI documentation
 
