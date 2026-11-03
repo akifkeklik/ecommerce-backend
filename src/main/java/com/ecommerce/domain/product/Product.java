@@ -1,6 +1,7 @@
 package com.ecommerce.domain.product;
 
 import com.ecommerce.domain.common.BaseEntity;
+import com.ecommerce.domain.exception.InsufficientStockException;
 import com.ecommerce.domain.user.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
