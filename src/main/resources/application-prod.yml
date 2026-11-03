@@ -37,3 +37,7 @@ logging:
     com.ecommerce: INFO
     org.springframework: WARN
     org.hibernate: WARN
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
