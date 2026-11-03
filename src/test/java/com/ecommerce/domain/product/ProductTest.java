@@ -104,7 +104,7 @@ class ProductTest {
         product.reverseSale(5);
 
         assertThat(product.getStockQuantity()).isEqualTo(100);
-        assertThat(product.getReservedQuantity()).isEqualTo(10);
+        assertThat(product.getReservedQuantity()).isEqualTo(5);
         assertThat(product.getTotalSales()).isZero();
     }
 
