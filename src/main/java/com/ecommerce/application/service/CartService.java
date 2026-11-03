@@ -69,7 +69,7 @@ public class CartService {
     }
 
     private CartDto addItemToCart(Cart cart, AddToCartRequest request) {
-        Product product = productRepository.findById(UUID.fromString(request.getProductId()))
+        Product product = productRepository.findActiveById(UUID.fromString(request.getProductId()))
                 .orElseThrow(() -> new EntityNotFoundException("Product", request.getProductId()));
 
         if (product.getAvailableQuantity() < request.getQuantity()) {
