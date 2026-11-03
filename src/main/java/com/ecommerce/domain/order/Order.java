@@ -349,6 +349,14 @@ public class Order extends BaseEntity {
         this.status = OrderStatus.CONFIRMED;
     }
 
+    /** Starts fulfilment after an order has been confirmed. */
+    public void startProcessing() {
+        if (this.status != OrderStatus.CONFIRMED) {
+            throw new IllegalStateException("Can only process confirmed orders");
+        }
+        this.status = OrderStatus.PROCESSING;
+    }
+
     /**
      * Marks the order as shipped.
      */
@@ -357,6 +365,14 @@ public class Order extends BaseEntity {
             throw new IllegalStateException("Can only ship orders that are being processed");
         }
         this.status = OrderStatus.SHIPPED;
+    }
+
+    /** Marks a shipped order as out for delivery. */
+    public void markOutForDelivery() {
+        if (this.status != OrderStatus.SHIPPED) {
+            throw new IllegalStateException("Can only mark shipped orders as out for delivery");
+        }
+        this.status = OrderStatus.OUT_FOR_DELIVERY;
     }
 
     /**
