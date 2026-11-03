@@ -61,15 +61,14 @@ public class AuthService {
         user.setRole(Role.CUSTOMER);
         user.setActive(true);
 
-        user = userRepository.save(user);
-        log.info("New user registered: {}", user.getUsername());
-
-        // Generate tokens
+        // Generate tokens before the first save so the refresh token is persisted
+        // together with the new user in a single repository operation.
         String accessToken = tokenProvider.generateAccessToken(user.getUsername());
         String refreshToken = tokenProvider.generateRefreshToken(user.getUsername());
-
         user.addRefreshToken(refreshToken);
-        userRepository.save(user);
+
+        user = userRepository.save(user);
+        log.info("New user registered: {}", user.getUsername());
 
         return buildAuthResponse(user, accessToken, refreshToken);
     }
