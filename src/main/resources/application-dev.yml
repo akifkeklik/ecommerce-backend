@@ -3,43 +3,35 @@ spring:
   config:
     activate:
       on-profile: dev
-  
   datasource:
     url: jdbc:postgresql://localhost:5432/ecommerce_dev
     username: postgres
     password: postgres
-  
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
-  
   data:
     redis:
       host: localhost
       port: 6379
-  
   mail:
     host: localhost
     port: 1025
 
-# JWT Configuration for Development
-jwt:
-  secret: dev-secret-key-for-jwt-token-generation-min-32-characters-long
+# JWT_SECRET is read from the shared application.yml configuration.
+# Generate a unique Base64-encoded 256-bit key for local development.
 
-# Payment Configuration (Sandbox)
 payment:
   stripe:
-    api-key: sk_test_your_stripe_test_key
+    api-key: ${STRIPE_API_KEY:}
   paypal:
     mode: sandbox
 
-# Swagger enabled in dev
 springdoc:
   swagger-ui:
     enabled: true
 
-# More verbose logging in dev
 logging:
   level:
     com.ecommerce: DEBUG
