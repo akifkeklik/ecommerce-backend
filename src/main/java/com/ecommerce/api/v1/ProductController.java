@@ -103,8 +103,10 @@ public class ProductController {
     @PostMapping("/{id}/publish")
     @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
     @Operation(summary = "Publish a product (Seller/Admin only)")
-    public ResponseEntity<ProductDto> publishProduct(@PathVariable UUID id) {
-        return ResponseEntity.ok(productService.publishProduct(id));
+    public ResponseEntity<ProductDto> publishProduct(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(productService.publishProduct(id, user));
     }
 
     @PatchMapping("/{id}/stock")
@@ -112,9 +114,10 @@ public class ProductController {
     @Operation(summary = "Update product stock (Seller/Admin only)")
     public ResponseEntity<Void> updateStock(
             @PathVariable UUID id,
-            @RequestParam int quantity) {
+            @RequestParam int quantity,
+            @AuthenticationPrincipal User user) {
 
-        productService.updateStock(id, quantity);
+        productService.updateStock(id, quantity, user);
         return ResponseEntity.noContent().build();
     }
 }
