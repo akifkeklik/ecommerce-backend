@@ -133,3 +133,7 @@ info:
     name: E-Commerce Backend
     description: E-Commerce Backend API
     version: 1.0.0
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080}
