@@ -33,7 +33,7 @@ public class Discount extends BaseEntity {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
+    @Column(name = "type", nullable = false, length = 30)
     private DiscountType type;
 
     @NotNull
@@ -82,7 +82,7 @@ public class Discount extends BaseEntity {
 
     @ElementCollection
     @CollectionTable(name = "discount_excluded_products", joinColumns = @JoinColumn(name = "discount_id"))
-    @Column(name = "product_id")
+    @Column(name = "product_id", length = 36)
     private Set<String> excludedProductIds = new HashSet<>();
 
     // ================== Constructors ==================
