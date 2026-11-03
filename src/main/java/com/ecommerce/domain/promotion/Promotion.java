@@ -35,7 +35,7 @@ public class Promotion extends BaseEntity {
     @Column(name = "type", nullable = false)
     private DiscountType type;
 
-    @Column(name = "value", precision = 12, scale = 2)
+    @Column(name = "\"value\"", precision = 12, scale = 2)
     private BigDecimal value;
 
     @Column(name = "start_date")
