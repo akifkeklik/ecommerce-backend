@@ -97,6 +97,26 @@ class ProductTest {
     }
 
     @Test
+    @DisplayName("Should restore stock when a confirmed sale is reversed")
+    void reverseSale_RestoresStockAndSalesCount() {
+        product.confirmSale(5);
+
+        product.reverseSale(5);
+
+        assertThat(product.getStockQuantity()).isEqualTo(100);
+        assertThat(product.getReservedQuantity()).isEqualTo(10);
+        assertThat(product.getTotalSales()).isZero();
+    }
+
+    @Test
+    @DisplayName("Should reject reversing a non-positive sale quantity")
+    void reverseSale_NonPositiveQuantity_ThrowsException() {
+        assertThatThrownBy(() -> product.reverseSale(0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("positive");
+    }
+
+    @Test
     @DisplayName("Should calculate discount percentage correctly")
     void getDiscountPercentage_WithCompareAtPrice_ReturnsDiscount() {
         // 99.99 / 129.99 = ~23% discount
