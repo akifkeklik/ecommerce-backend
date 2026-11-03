@@ -187,12 +187,18 @@ public class OrderService {
             throw new IllegalStateException("Order cannot be cancelled in current state");
         }
 
+        OrderStatus previousStatus = order.getStatus();
         order.cancel(reason);
 
-        // Release reserved stock
+        // Pending orders only hold a reservation. Confirmed orders have already
+        // reduced on-hand stock, so cancellation must put those units back.
         for (OrderItem item : order.getItems()) {
             Product product = item.getProduct();
-            product.releaseStock(item.getQuantity());
+            if (previousStatus == OrderStatus.PENDING) {
+                product.releaseStock(item.getQuantity());
+            } else {
+                product.reverseSale(item.getQuantity());
+            }
             productRepository.save(product);
         }
 
@@ -223,7 +229,14 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Order", orderId));
 
-        order.setStatus(status);
+        switch (status) {
+            case PROCESSING -> order.startProcessing();
+            case SHIPPED -> order.ship(null);
+            case OUT_FOR_DELIVERY -> order.markOutForDelivery();
+            case DELIVERED -> order.deliver();
+            default -> throw new IllegalArgumentException(
+                    "Use the dedicated order action for status: " + status);
+        }
         order = orderRepository.save(order);
 
         return toDto(order);
