@@ -73,4 +73,19 @@ class OrderTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("shipped");
     }
+
+    @Test
+    @DisplayName("Generated order numbers are unique and API-safe")
+    void generateOrderNumber_ProducesUniqueReferences() {
+        java.util.Set<String> references = new java.util.HashSet<>();
+
+        for (int index = 0; index < 10_000; index++) {
+            String reference = Order.generateOrderNumber();
+            assertThat(reference).matches("ORD-[A-F0-9]{16}");
+            references.add(reference);
+        }
+
+        assertThat(references).hasSize(10_000);
+    }
+
 }
