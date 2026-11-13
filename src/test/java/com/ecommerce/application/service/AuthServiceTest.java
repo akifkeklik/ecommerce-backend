@@ -79,7 +79,6 @@ class AuthServiceTest {
     @Test
     @DisplayName("Should register a new user successfully")
     void register_Success() {
-        // Given
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(userRepository.existsByUsername(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
@@ -88,10 +87,8 @@ class AuthServiceTest {
         when(tokenProvider.generateRefreshToken(anyString())).thenReturn("refreshToken");
         when(tokenProvider.getAccessTokenExpiration()).thenReturn(900000L);
 
-        // When
         AuthResponse response = authService.register(registerRequest);
 
-        // Then
         assertThat(response).isNotNull();
         assertThat(response.getAccessToken()).isEqualTo("accessToken");
         assertThat(response.getRefreshToken()).isEqualTo("refreshToken");
@@ -105,10 +102,8 @@ class AuthServiceTest {
     @Test
     @DisplayName("Should throw exception when email already exists")
     void register_EmailExists_ThrowsException() {
-        // Given
         when(userRepository.existsByEmail(anyString())).thenReturn(true);
 
-        // When & Then
         assertThatThrownBy(() -> authService.register(registerRequest))
                 .isInstanceOf(DomainException.class)
                 .hasMessageContaining("Email is already registered");
@@ -119,11 +114,9 @@ class AuthServiceTest {
     @Test
     @DisplayName("Should throw exception when username already exists")
     void register_UsernameExists_ThrowsException() {
-        // Given
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(userRepository.existsByUsername(anyString())).thenReturn(true);
 
-        // When & Then
         assertThatThrownBy(() -> authService.register(registerRequest))
                 .isInstanceOf(DomainException.class)
                 .hasMessageContaining("Username is already taken");
@@ -134,7 +127,6 @@ class AuthServiceTest {
     @Test
     @DisplayName("Should login user successfully")
     void login_Success() {
-        // Given
         Authentication authentication = mock(Authentication.class);
         when(authentication.getPrincipal()).thenReturn(user);
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
@@ -144,10 +136,8 @@ class AuthServiceTest {
         when(tokenProvider.getAccessTokenExpiration()).thenReturn(900000L);
         when(userRepository.save(any(User.class))).thenReturn(user);
 
-        // When
         AuthResponse response = authService.login(loginRequest);
 
-        // Then
         assertThat(response).isNotNull();
         assertThat(response.getAccessToken()).isEqualTo("accessToken");
         assertThat(response.getUser().getUsername()).isEqualTo("testuser");
@@ -158,16 +148,13 @@ class AuthServiceTest {
     @Test
     @DisplayName("Should logout user by removing refresh token")
     void logout_Success() {
-        // Given
         String refreshToken = "validRefreshToken";
-        when(tokenProvider.validateToken(refreshToken)).thenReturn(true);
+        when(tokenProvider.validateRefreshToken(refreshToken)).thenReturn(true);
         when(tokenProvider.getUsernameFromToken(refreshToken)).thenReturn("testuser");
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
 
-        // When
         authService.logout(refreshToken);
 
-        // Then
         verify(userRepository).save(user);
     }
 }
