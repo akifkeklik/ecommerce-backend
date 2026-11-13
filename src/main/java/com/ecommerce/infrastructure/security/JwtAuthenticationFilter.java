@@ -18,7 +18,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * JWT Authentication filter that intercepts requests and validates JWT tokens.
+ * Authenticates requests using access tokens only.
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -40,9 +40,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = extractTokenFromRequest(request);
 
-            if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
+            if (StringUtils.hasText(jwt) && tokenProvider.validateAccessToken(jwt)) {
                 String username = tokenProvider.getUsernameFromToken(jwt);
-
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
@@ -51,11 +50,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         userDetails.getAuthorities());
 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (Exception ex) {
-            log.error("Could not set user authentication in security context", ex);
+            log.debug("Request authentication failed: {}", ex.getClass().getSimpleName());
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);
