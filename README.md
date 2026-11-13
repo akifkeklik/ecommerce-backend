@@ -16,7 +16,7 @@ The repository is a learning and portfolio project. The core API areas are authe
 ## Technology
 
 - Java 17
-- Spring Boot 3.2.x
+- Spring Boot 3.5.x
 - Spring Web and Spring Security
 - Spring Data JPA / Hibernate
 - PostgreSQL and Flyway
