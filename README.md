@@ -128,7 +128,17 @@ Run the test suite:
 mvn test
 ```
 
-The test configuration uses an in-memory H2 database and a test-only JWT secret.
+The test configuration uses an in-memory H2 database and a test-only JWT secret. GitHub Actions runs the Maven test suite on pushes and pull requests to `main`.
+
+The suite covers authentication API validation, product and order domain rules, JWT token-purpose validation, and rate-limit client-registry bounds.
+
+## Operational safeguards and trade-offs
+
+- The in-memory rate limiter has a configurable client cap and idle eviction. It protects a single application instance; multi-instance deployments need a shared rate-limit store such as Redis.
+- Guest-cart items that cannot be merged because a product is unavailable remain in the guest cart for later review rather than being silently discarded.
+- Order references use UUID-backed identifiers to avoid collisions from timestamp/random-number generation.
+- Order history pagination is constrained to page sizes from 1 to 100.
+- The Docker Compose credentials are for local development only. Do not reuse them in a public deployment.
 
 ## License
 
