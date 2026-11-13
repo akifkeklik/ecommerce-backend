@@ -22,12 +22,6 @@ spring:
 # JWT_SECRET is read from the shared application.yml configuration.
 # Generate a unique Base64-encoded 256-bit key for local development.
 
-payment:
-  stripe:
-    api-key: ${STRIPE_API_KEY:}
-  paypal:
-    mode: sandbox
-
 springdoc:
   swagger-ui:
     enabled: true
