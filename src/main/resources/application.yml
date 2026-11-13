@@ -128,6 +128,8 @@ rate-limit:
   capacity: 100
   refill-tokens: 100
   refill-duration: 60
+  max-clients: 10000
+  idle-timeout-seconds: 900
 info:
   app:
     name: E-Commerce Backend
