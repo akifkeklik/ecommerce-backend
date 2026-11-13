@@ -161,18 +161,26 @@ public class CartService {
         Cart userCart = getOrCreateCart(user);
 
         cartRepository.findBySessionIdWithItems(sessionId).ifPresent(guestCart -> {
-            for (CartItem guestItem : guestCart.getItems()) {
+            // Work on a snapshot because successfully merged items are removed from the guest cart.
+            for (CartItem guestItem : new java.util.ArrayList<>(guestCart.getItems())) {
                 AddToCartRequest request = new AddToCartRequest(
                         guestItem.getProduct().getId().toString(),
                         guestItem.getQuantity());
                 try {
                     addItemToCart(userCart, request);
-                } catch (InsufficientStockException e) {
-                    log.warn("Could not merge cart item due to insufficient stock: {}",
+                    guestCart.removeItem(guestItem);
+                } catch (InsufficientStockException | EntityNotFoundException e) {
+                    // Keep unavailable items in the guest cart so the user can review them later.
+                    log.warn("Could not merge cart item; keeping it in the guest cart: {}",
                             guestItem.getProduct().getSku());
                 }
             }
-            cartRepository.delete(guestCart);
+
+            if (guestCart.isEmpty()) {
+                cartRepository.delete(guestCart);
+            } else {
+                cartRepository.save(guestCart);
+            }
         });
 
         return toDto(userCart);
