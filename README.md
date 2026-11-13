@@ -134,6 +134,11 @@ The test configuration uses an in-memory H2 database and a test-only JWT secret.
 
 No license file is currently included. All rights remain with the author unless a license is added.
 
+## Authentication token behavior
+
+- Access tokens and refresh tokens carry distinct token-purpose claims. Only access tokens authenticate API requests; refresh tokens are accepted only by refresh-token rotation and logout.
+- Tokens issued before token-purpose validation was introduced are intentionally rejected. Existing users must sign in again once after upgrading.
+
 ## Scope and limitations
 
 - Payment and shipping domain models and migrations are present, but live Stripe, PayPal, or carrier workflows are not currently documented as verified.
