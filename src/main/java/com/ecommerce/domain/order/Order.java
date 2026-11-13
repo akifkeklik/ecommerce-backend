@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Order entity representing a customer's purchase.
@@ -429,7 +430,7 @@ public class Order extends BaseEntity {
      * Generates a unique order number.
      */
     public static String generateOrderNumber() {
-        return "ORD-" + System.currentTimeMillis() + "-" +
-                String.format("%04d", (int) (Math.random() * 10000));
+        // A UUID-backed suffix avoids collisions under concurrent order creation.
+        return "ORD-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
     }
 }
