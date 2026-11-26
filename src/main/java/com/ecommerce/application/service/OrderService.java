@@ -15,6 +15,10 @@ import com.ecommerce.domain.user.User;
 import com.ecommerce.infrastructure.repository.OrderRepository;
 import com.ecommerce.infrastructure.repository.ProductRepository;
 import com.ecommerce.application.service.DiscountService.AppliedDiscount;
+import com.ecommerce.application.payment.PaymentGateway;
+import com.ecommerce.domain.exception.PaymentException;
+import com.ecommerce.domain.payment.Payment;
+import com.ecommerce.infrastructure.repository.PaymentRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -38,12 +42,17 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final DiscountService discountService;
+    private final PaymentRepository paymentRepository;
+    private final PaymentGateway paymentGateway;
 
     public OrderService(OrderRepository orderRepository, ProductRepository productRepository,
-            DiscountService discountService) {
+            DiscountService discountService, PaymentRepository paymentRepository,
+            PaymentGateway paymentGateway) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.discountService = discountService;
+        this.paymentRepository = paymentRepository;
+        this.paymentGateway = paymentGateway;
     }
 
     /**
@@ -202,6 +211,7 @@ public class OrderService {
         if (order.getDiscountCode() != null) {
             discountService.release(order.getDiscountCode());
         }
+        refundIfPaid(order, reason);
 
         // Pending orders only hold a reservation. Confirmed orders have already
         // reduced on-hand stock, so cancellation must put those units back.
@@ -218,6 +228,25 @@ public class OrderService {
         order = orderRepository.save(order);
         log.info("Order cancelled: {} - Reason: {}", order.getOrderNumber(), reason);
         return toDto(order);
+    }
+
+    /**
+     * A paid order is refunded in full when it is cancelled. If the provider refuses the refund,
+     * the exception rolls the cancellation back so stock, order and money stay consistent.
+     */
+    private void refundIfPaid(Order order, String reason) {
+        paymentRepository.findByOrderId(order.getId())
+                .filter(Payment::isRefundable)
+                .ifPresent(payment -> {
+                    var result = paymentGateway.refund(payment.getProviderTransactionId(),
+                            payment.getRefundableAmount(), payment.getCurrency());
+                    if (!result.succeeded()) {
+                        throw new PaymentException("Refund failed, order not cancelled: " + result.failureReason());
+                    }
+                    payment.refund(payment.getRefundableAmount(), reason);
+                    paymentRepository.save(payment);
+                    log.info("Refunded order {}", order.getOrderNumber());
+                });
     }
 
     private void assertCanAccessOrder(Order order, User currentUser) {

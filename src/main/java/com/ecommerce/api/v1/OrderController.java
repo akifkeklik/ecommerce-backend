@@ -3,7 +3,10 @@ package com.ecommerce.api.v1;
 import com.ecommerce.application.dto.common.PagedResponse;
 import com.ecommerce.application.dto.order.CreateOrderRequest;
 import com.ecommerce.application.dto.order.OrderDto;
+import com.ecommerce.application.dto.payment.PayOrderRequest;
+import com.ecommerce.application.dto.payment.PaymentDto;
 import com.ecommerce.application.service.OrderService;
+import com.ecommerce.application.service.PaymentService;
 import com.ecommerce.domain.order.OrderStatus;
 import com.ecommerce.domain.user.User;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,9 +32,11 @@ import java.util.UUID;
 public class OrderController {
 
     private final OrderService orderService;
+    private final PaymentService paymentService;
 
-    public OrderController(OrderService orderService) {
+    public OrderController(OrderService orderService, PaymentService paymentService) {
         this.orderService = orderService;
+        this.paymentService = paymentService;
     }
 
     @PostMapping
@@ -100,5 +105,20 @@ public class OrderController {
     @Operation(summary = "Confirm order after payment (Admin only)")
     public ResponseEntity<OrderDto> confirmOrder(@PathVariable UUID id) {
         return ResponseEntity.ok(orderService.confirmOrder(id));
+    }
+
+    @PostMapping("/{id}/payments")
+    @Operation(summary = "Pay for your pending order; confirms it on success, 402 when declined. Safe to retry.")
+    public ResponseEntity<PaymentDto> payOrder(
+            @PathVariable UUID id,
+            @Valid @RequestBody PayOrderRequest request,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(paymentService.pay(id, user, request));
+    }
+
+    @GetMapping("/{id}/payment")
+    @Operation(summary = "Payment for an order (owner or admin)")
+    public ResponseEntity<PaymentDto> getPayment(@PathVariable UUID id, @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(paymentService.getPayment(id, user));
     }
 }
