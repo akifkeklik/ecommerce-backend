@@ -14,6 +14,7 @@ import com.ecommerce.domain.user.Address;
 import com.ecommerce.domain.user.User;
 import com.ecommerce.infrastructure.repository.OrderRepository;
 import com.ecommerce.infrastructure.repository.ProductRepository;
+import com.ecommerce.application.service.DiscountService.AppliedDiscount;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -36,10 +37,13 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final DiscountService discountService;
 
-    public OrderService(OrderRepository orderRepository, ProductRepository productRepository) {
+    public OrderService(OrderRepository orderRepository, ProductRepository productRepository,
+            DiscountService discountService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
+        this.discountService = discountService;
     }
 
     /**
@@ -56,7 +60,6 @@ public class OrderService {
         order.setBillingAddress(request.getBillingAddress() != null
                 ? toAddress(request.getBillingAddress())
                 : toAddress(request.getShippingAddress()));
-        order.setDiscountCode(request.getDiscountCode());
         order.setNotes(request.getNotes());
 
         BigDecimal subtotal = BigDecimal.ZERO;
@@ -80,6 +83,13 @@ public class OrderService {
             OrderItem orderItem = OrderItem.fromProduct(product, itemRequest.getQuantity());
             order.addItem(orderItem);
             subtotal = subtotal.add(orderItem.getTotal());
+        }
+
+        // A code is checked and its use recorded in this transaction: a rejected code fails the whole order.
+        if (request.getDiscountCode() != null && !request.getDiscountCode().isBlank()) {
+            AppliedDiscount applied = discountService.apply(request.getDiscountCode(), user, order.getItems());
+            order.setDiscountCode(applied.code());
+            order.setDiscountAmount(applied.amount());
         }
 
         // Set totals
@@ -189,6 +199,9 @@ public class OrderService {
 
         OrderStatus previousStatus = order.getStatus();
         order.cancel(reason);
+        if (order.getDiscountCode() != null) {
+            discountService.release(order.getDiscountCode());
+        }
 
         // Pending orders only hold a reservation. Confirmed orders have already
         // reduced on-hand stock, so cancellation must put those units back.

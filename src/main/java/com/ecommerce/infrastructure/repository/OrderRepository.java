@@ -38,6 +38,12 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     @Query("SELECT COUNT(o) FROM Order o WHERE o.user.id = :userId AND o.status = 'DELIVERED'")
     long countDeliveredOrdersByUser(@Param("userId") UUID userId);
 
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.user.id = :userId AND o.status <> com.ecommerce.domain.order.OrderStatus.CANCELLED")
+    long countActiveOrdersByUser(@Param("userId") UUID userId);
+
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.user.id = :userId AND UPPER(o.discountCode) = UPPER(:code) AND o.status <> com.ecommerce.domain.order.OrderStatus.CANCELLED")
+    long countActiveOrdersByUserWithDiscount(@Param("userId") UUID userId, @Param("code") String code);
+
     @Query("SELECT o FROM Order o JOIN o.items i WHERE i.product.seller.id = :sellerId")
     Page<Order> findOrdersBySeller(@Param("sellerId") UUID sellerId, Pageable pageable);
 }

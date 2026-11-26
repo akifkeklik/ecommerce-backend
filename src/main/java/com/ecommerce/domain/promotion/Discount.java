@@ -297,7 +297,8 @@ public class Discount extends BaseEntity {
                         java.math.RoundingMode.HALF_UP);
                 break;
             case FREE_SHIPPING:
-                return value; // Return the shipping cost as discount
+                // Waives shipping, which is not part of the item total; it never reduces the items.
+                return BigDecimal.ZERO;
             default:
                 discount = BigDecimal.ZERO;
         }
@@ -319,7 +320,14 @@ public class Discount extends BaseEntity {
      * Records usage of the discount.
      */
     public void recordUsage() {
-        this.usageCount++;
+        this.usageCount = (usageCount == null ? 0 : usageCount) + 1;
+    }
+
+    /** Gives a use back, e.g. when the order that used the code is cancelled. */
+    public void releaseUsage() {
+        if (usageCount != null && usageCount > 0) {
+            this.usageCount--;
+        }
     }
 
     /**
