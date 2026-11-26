@@ -10,6 +10,7 @@ The repository is a learning and portfolio project. The core API areas are authe
 - **Products:** product listing, search, product creation, publishing, and stock updates
 - **Cart:** customer cart management; guest-session cart view/add with merge after login
 - **Orders:** order creation, customer order history, cancellation, and administrator-controlled fulfilment status transitions
+- **Discount codes:** percentage and fixed-amount codes checked at checkout (validity window, total and per-customer limits, first-order codes, minimum amount, product and category scope); the code row is locked so a limited code cannot be over-used, and cancelling an order gives the use back
 - **Stock handling:** order creation reserves stock under a database row lock; cancellation releases pending reservations or restores stock from confirmed orders
 - **Infrastructure:** PostgreSQL, Flyway migrations, Spring Security, JWT, Docker Compose, and OpenAPI documentation
 
@@ -152,6 +153,6 @@ No license file is currently included. All rights remain with the author unless 
 ## Scope and limitations
 
 - Payment and shipping domain models and migrations are present, but live Stripe, PayPal, or carrier workflows are not currently documented as verified.
-- Reviews and promotions have domain/schema foundations; verify each API workflow before relying on it.
+- Reviews have domain/schema foundations; verify the API workflow before relying on it. Free-shipping and buy-X-get-Y discounts exist in the model but are rejected at checkout until shipping and bundle pricing exist.
 - This project has not been independently deployed or production-hardened. Configure secrets, database access, CORS, logging, monitoring, and operational controls before any public deployment.
 - Never commit `.env` or real credentials.
