@@ -12,6 +12,7 @@ The repository is a learning and portfolio project. The core API areas are authe
 - **Orders:** order creation, customer order history, cancellation, and administrator-controlled fulfilment status transitions
 - **Discount codes:** percentage and fixed-amount codes checked at checkout (validity window, total and per-customer limits, first-order codes, minimum amount, product and category scope); the code row is locked so a limited code cannot be over-used, and cancelling an order gives the use back
 - **Payments:** `POST /api/v1/orders/{id}/payments` charges a pending order through a `PaymentGateway` port and confirms it; a declined payment returns 402 and can be retried; paying again returns the same payment instead of charging twice (order row locked); cancelling a paid order refunds it, and a refused refund rolls the cancellation back. The default provider is **simulated** (no money moves; `tok_decline` and `tok_insufficient_funds` test declines); a real provider is a new `PaymentGateway` implementation selected with `PAYMENT_PROVIDER`
+- **Reviews:** one review per customer and product, held for moderation (`GET /reviews/pending`, `POST /reviews/{id}/approve|reject`, admin only); "verified purchase" when the customer has a delivered order with the product; one helpful vote per reader, not on one's own review
 - **Stock handling:** order creation reserves stock under a database row lock; cancellation releases pending reservations or restores stock from confirmed orders
 - **Infrastructure:** PostgreSQL, Flyway migrations, Spring Security, JWT, Docker Compose, and OpenAPI documentation
 
@@ -132,7 +133,9 @@ mvn test
 
 The test configuration uses an in-memory H2 database and a test-only JWT secret. GitHub Actions runs the Maven test suite on pushes and pull requests to `main`.
 
-The suite covers authentication API validation, product and order domain rules, JWT token-purpose validation, and rate-limit client-registry bounds.
+The suite (58 tests) covers authentication, product and order domain rules, JWT token-purpose validation, rate-limit bounds, discount rules, payments and refunds, and an end-to-end checkout through the HTTP API on the real Spring context: order with a code, declined and retried payment, no double charge, cancellation with refund and restored stock, then review moderation and one helpful vote per reader.
+
+Flyway migrations are not run by the test profile (Hibernate creates the H2 schema), so a migration that disagrees with an entity is only caught against PostgreSQL.
 
 ## Operational safeguards and trade-offs
 
@@ -154,6 +157,6 @@ No license file is currently included. All rights remain with the author unless 
 ## Scope and limitations
 
 - Payments run through a simulated provider; no live Stripe, iyzico or PayPal integration is included. Shipping has a domain model and migration but no carrier workflow; administrators move orders through shipped and delivered states.
-- Reviews have domain/schema foundations; verify the API workflow before relying on it. Free-shipping and buy-X-get-Y discounts exist in the model but are rejected at checkout until shipping and bundle pricing exist.
+- Free-shipping and buy-X-get-Y discounts exist in the model but are rejected at checkout until shipping and bundle pricing exist.
 - This project has not been independently deployed or production-hardened. Configure secrets, database access, CORS, logging, monitoring, and operational controls before any public deployment.
 - Never commit `.env` or real credentials.

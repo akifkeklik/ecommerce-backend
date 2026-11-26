@@ -2,7 +2,7 @@ package com.ecommerce.api.v1;
 
 import com.ecommerce.domain.review.Review;
 import com.ecommerce.domain.user.User;
-import com.ecommerce.infrastructure.repository.ProductRepository;
+import com.ecommerce.application.service.ReviewService;
 import com.ecommerce.infrastructure.repository.ReviewRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,12 +33,14 @@ import java.util.UUID;
 @Tag(name = "Reviews", description = "Product reviews and ratings")
 public class ReviewController {
 
-    private final ReviewRepository reviewRepository;
-    private final ProductRepository productRepository;
+    private static final int MAX_PAGE_SIZE = 50;
 
-    public ReviewController(ReviewRepository reviewRepository, ProductRepository productRepository) {
+    private final ReviewRepository reviewRepository;
+    private final ReviewService reviewService;
+
+    public ReviewController(ReviewRepository reviewRepository, ReviewService reviewService) {
         this.reviewRepository = reviewRepository;
-        this.productRepository = productRepository;
+        this.reviewService = reviewService;
     }
 
     @GetMapping("/product/{productId}")
@@ -47,7 +50,8 @@ public class ReviewController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE),
+                Sort.by("createdAt").descending());
         Page<Review> reviews = reviewRepository.findByProductIdAndApproved(productId, true, pageable);
 
         PagedReviewResponse response = new PagedReviewResponse();
@@ -63,43 +67,50 @@ public class ReviewController {
     }
 
     @PostMapping
-    @Operation(summary = "Submit a product review")
+    @Operation(summary = "Submit a product review; it is shown after moderation")
     public ResponseEntity<ReviewDto> createReview(
             @Valid @RequestBody CreateReviewRequest request,
             @AuthenticationPrincipal User user) {
-
-        UUID productId = UUID.fromString(request.getProductId());
-
-        // Check if user already reviewed this product
-        if (reviewRepository.existsByProductIdAndUserId(productId, user.getId())) {
-            return ResponseEntity.badRequest().build();
+        UUID productId;
+        try {
+            productId = UUID.fromString(request.getProductId());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("productId must be a UUID");
         }
-
-        var product = productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
-
-        Review review = new Review();
-        review.setProduct(product);
-        review.setUser(user);
-        review.setRating(request.getRating());
-        review.setTitle(request.getTitle());
-        review.setComment(request.getComment());
-        review.setVerifiedPurchase(false); // Would check order history
-        review.setApproved(false); // Requires moderation
-
-        review = reviewRepository.save(review);
-
+        Review review = reviewService.create(user, productId, request.getRating(), request.getTitle(),
+                request.getComment());
         return ResponseEntity.status(HttpStatus.CREATED).body(toDto(review));
     }
 
     @PostMapping("/{id}/helpful")
-    @Operation(summary = "Mark a review as helpful")
-    public ResponseEntity<Void> markHelpful(@PathVariable UUID id) {
-        reviewRepository.findById(id).ifPresent(review -> {
-            review.markHelpful();
-            reviewRepository.save(review);
-        });
-        return ResponseEntity.ok().build();
+    @Operation(summary = "Mark a review as helpful; one vote per reader")
+    public ResponseEntity<Void> markHelpful(@PathVariable UUID id, @AuthenticationPrincipal User user) {
+        boolean counted = reviewService.markHelpful(id, user);
+        return counted ? ResponseEntity.ok().build() : ResponseEntity.status(HttpStatus.CONFLICT).build();
+    }
+
+    @GetMapping("/pending")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Reviews waiting for moderation, oldest first (Admin only)")
+    public ResponseEntity<List<ReviewDto>> pendingReviews(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE));
+        return ResponseEntity.ok(reviewService.pending(pageable).map(this::toDto).getContent());
+    }
+
+    @PostMapping("/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Show a review on the product page (Admin only)")
+    public ResponseEntity<ReviewDto> approve(@PathVariable UUID id, @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(toDto(reviewService.approve(id, user)));
+    }
+
+    @PostMapping("/{id}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Hide a review (Admin only)")
+    public ResponseEntity<ReviewDto> reject(@PathVariable UUID id) {
+        return ResponseEntity.ok(toDto(reviewService.reject(id)));
     }
 
     private ReviewDto toDto(Review review) {
