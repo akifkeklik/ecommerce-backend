@@ -39,10 +39,16 @@ services:
         value: "false"
       - key: MANAGEMENT_HEALTH_MAIL_ENABLED
         value: "false"
-      # Swagger UI is the demo's front end.
-      - key: SPRINGDOC_SWAGGERUI_ENABLED
+      # Swagger UI is the demo's front end. springdoc reads these through property conditions
+      # (SPRINGDOC_API_DOCS_ENABLED form) and configuration binding (SPRINGDOC_APIDOCS_ENABLED form),
+      # so both spellings are set; RenderBlueprintStartupTest checks Swagger is actually served.
+      - key: SPRINGDOC_API_DOCS_ENABLED
         value: "true"
       - key: SPRINGDOC_APIDOCS_ENABLED
+        value: "true"
+      - key: SPRINGDOC_SWAGGER_UI_ENABLED
+        value: "true"
+      - key: SPRINGDOC_SWAGGERUI_ENABLED
         value: "true"
       # 512 MB instance and a small free database.
       - key: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
