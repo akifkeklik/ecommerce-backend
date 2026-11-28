@@ -26,7 +26,7 @@ services:
       - key: PAYMENT_PROVIDER
         value: simulated
       - key: CORS_ALLOWED_ORIGINS
-        value: https://ecommerce-backend-api.onrender.com
+        value: https://ecommerce-backend-api-rxk3.onrender.com
       # The demo has no Redis or SMTP server: the app falls back to an in-memory cache and logs
       # e-mails it cannot send, so those two must not mark the service unhealthy.
       - key: REDIS_HOST

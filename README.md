@@ -4,6 +4,8 @@
 
 **A Spring Boot REST API for an online shop: catalogue, cart, discount codes, orders, payments with refunds and moderated reviews.**
 
+**[Live API docs (Swagger UI)](https://ecommerce-backend-api-rxk3.onrender.com/swagger-ui.html)**
+
 [![Java CI](https://github.com/akifkeklik/ecommerce-backend/actions/workflows/java-ci.yml/badge.svg)](https://github.com/akifkeklik/ecommerce-backend/actions/workflows/java-ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 ![Java](https://img.shields.io/badge/Java-17-ED8B00?logo=openjdk&logoColor=white)
@@ -72,14 +74,14 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 The whole stack in containers: `docker compose up -d --build` (after setting `JWT_SECRET` in `.env`).
 The Compose credentials are for local development only.
 
-## Deploy
+## Live demo
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/akifkeklik/ecommerce-backend)
+**[Swagger UI → ecommerce-backend-api-rxk3.onrender.com/swagger-ui.html](https://ecommerce-backend-api-rxk3.onrender.com/swagger-ui.html)**
 
-`render.yaml` creates the API and a PostgreSQL database on Render's free tier; Flyway builds the schema on the
-first start and Swagger UI is served at `/swagger-ui.html`. The free API sleeps after 15 minutes idle, and Render's
-free database expires after 30 days. A test (`RenderBlueprintStartupTest`) starts the app with exactly this
-blueprint on PostgreSQL in CI, so a broken deployment setting fails the build, not the deploy.
+Runs on Render's free tier from `render.yaml` (the API and a PostgreSQL database; Flyway builds the schema on start).
+The first request after 15 minutes idle wakes the server, which takes about a minute. The catalogue starts empty:
+register, then try the endpoints from Swagger UI. A test (`RenderBlueprintStartupTest`) starts the app with exactly
+this blueprint on PostgreSQL in CI, so a broken deployment setting fails the build, not the deploy.
 
 ## Tests
 
