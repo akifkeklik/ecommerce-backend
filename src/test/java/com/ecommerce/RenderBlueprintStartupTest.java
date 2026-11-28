@@ -8,8 +8,10 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.env.SystemEnvironmentPropertySource;
+import org.springframework.test.context.ContextConfiguration;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -20,6 +22,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -33,26 +36,40 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("prod")
 @Testcontainers(disabledWithoutDocker = true)
+@ContextConfiguration(initializers = RenderBlueprintStartupTest.RenderEnvironment.class)
 class RenderBlueprintStartupTest {
 
     @Container
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");
 
-    @DynamicPropertySource
-    static void blueprint(DynamicPropertyRegistry registry) throws IOException {
-        for (Map<String, Object> env : blueprintEnv()) {
-            if (env.containsKey("value")) {
-                String value = String.valueOf(env.get("value"));
-                registry.add(String.valueOf(env.get("key")), () -> value);
+    /**
+     * Render passes these as operating-system environment variables, so they are added as a
+     * SystemEnvironmentPropertySource: Spring's relaxed binding then treats them exactly as on Render
+     * (MANAGEMENT_HEALTH_REDIS_ENABLED -> management.health.redis.enabled, and a misspelt key stays unbound).
+     */
+    static class RenderEnvironment implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+        @Override
+        public void initialize(ConfigurableApplicationContext context) {
+            Map<String, Object> env = new HashMap<>();
+            try {
+                for (Map<String, Object> entry : blueprintEnv()) {
+                    if (entry.containsKey("value")) {
+                        env.put(String.valueOf(entry.get("key")), String.valueOf(entry.get("value")));
+                    }
+                }
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
             }
+            // What Render fills in from the database and generateValue.
+            env.put("DB_HOST", POSTGRES.getHost());
+            env.put("DB_PORT", String.valueOf(POSTGRES.getMappedPort(5432)));
+            env.put("DB_NAME", POSTGRES.getDatabaseName());
+            env.put("DB_USERNAME", POSTGRES.getUsername());
+            env.put("DB_PASSWORD", POSTGRES.getPassword());
+            env.put("JWT_SECRET", Base64.getEncoder().encodeToString("render-blueprint-test-signing-key".getBytes()));
+            context.getEnvironment().getPropertySources()
+                    .addFirst(new SystemEnvironmentPropertySource("render-blueprint", env));
         }
-        // What Render fills in from the database and generateValue.
-        registry.add("DB_HOST", POSTGRES::getHost);
-        registry.add("DB_PORT", () -> POSTGRES.getMappedPort(5432));
-        registry.add("DB_NAME", POSTGRES::getDatabaseName);
-        registry.add("DB_USERNAME", POSTGRES::getUsername);
-        registry.add("DB_PASSWORD", POSTGRES::getPassword);
-        registry.add("JWT_SECRET", () -> Base64.getEncoder().encodeToString(new byte[32]).replace('A', 'k'));
     }
 
     @SuppressWarnings("unchecked")

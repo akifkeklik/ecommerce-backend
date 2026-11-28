@@ -40,9 +40,9 @@ services:
       - key: MANAGEMENT_HEALTH_MAIL_ENABLED
         value: "false"
       # Swagger UI is the demo's front end.
-      - key: SPRINGDOC_SWAGGER_UI_ENABLED
+      - key: SPRINGDOC_SWAGGERUI_ENABLED
         value: "true"
-      - key: SPRINGDOC_API_DOCS_ENABLED
+      - key: SPRINGDOC_APIDOCS_ENABLED
         value: "true"
       # 512 MB instance and a small free database.
       - key: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
