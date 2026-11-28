@@ -72,6 +72,15 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 The whole stack in containers: `docker compose up -d --build` (after setting `JWT_SECRET` in `.env`).
 The Compose credentials are for local development only.
 
+## Deploy
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/akifkeklik/ecommerce-backend)
+
+`render.yaml` creates the API and a PostgreSQL database on Render's free tier; Flyway builds the schema on the
+first start and Swagger UI is served at `/swagger-ui.html`. The free API sleeps after 15 minutes idle, and Render's
+free database expires after 30 days. A test (`RenderBlueprintStartupTest`) starts the app with exactly this
+blueprint on PostgreSQL in CI, so a broken deployment setting fails the build, not the deploy.
+
 ## Tests
 
 ```bash
