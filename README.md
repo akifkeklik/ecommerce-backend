@@ -12,6 +12,10 @@
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F?logo=spring-boot&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 
+<img src="docs/screenshots/swagger-ui.png" alt="Swagger UI of the E-Commerce API with authentication, category and order endpoints" width="100%" />
+
+<sub>Interactive API documentation (Swagger UI). Register, log in, click <b>Authorize</b> with the access token and try every endpoint.</sub>
+
 </div>
 
 > **Project:** E-Commerce Backend, a REST API portfolio project
