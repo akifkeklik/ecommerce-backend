@@ -1,5 +1,6 @@
-# One-click demo on Render: the API (Docker) and a PostgreSQL database.
-# Free tier: the API sleeps after 15 minutes idle; Render's free PostgreSQL expires after 30 days.
+# Demo on Render: the API (Docker). The database is an external PostgreSQL (the live demo uses Neon's free
+# plan, which does not expire like Render's free database). Its connection values are entered once in the
+# Render dashboard (sync: false), never committed. Free tier: the API sleeps after 15 minutes idle.
 services:
   - type: web
     name: ecommerce-backend-api
@@ -11,15 +12,18 @@ services:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
       - key: DB_HOST
-        fromDatabase: { name: ecommerce-db, property: host }
+        sync: false
       - key: DB_PORT
-        fromDatabase: { name: ecommerce-db, property: port }
+        value: "5432"
       - key: DB_NAME
-        fromDatabase: { name: ecommerce-db, property: database }
+        sync: false
       - key: DB_USERNAME
-        fromDatabase: { name: ecommerce-db, property: user }
+        sync: false
       - key: DB_PASSWORD
-        fromDatabase: { name: ecommerce-db, property: password }
+        sync: false
+      # Neon accepts encrypted connections only.
+      - key: DB_SSLMODE
+        sync: false
       # Random 256-bit, Base64-encoded signing key, created once by Render.
       - key: JWT_SECRET
         generateValue: true
@@ -58,9 +62,3 @@ services:
       - key: JAVA_OPTS
         value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=70.0 -XX:+UseSerialGC -Xss512k"
 
-databases:
-  - name: ecommerce-db
-    plan: free
-    region: frankfurt
-    databaseName: ecommerce
-    postgresMajorVersion: "16"

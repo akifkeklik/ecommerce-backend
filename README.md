@@ -78,7 +78,8 @@ The Compose credentials are for local development only.
 
 **[Swagger UI → ecommerce-backend-api-rxk3.onrender.com/swagger-ui.html](https://ecommerce-backend-api-rxk3.onrender.com/swagger-ui.html)**
 
-Runs on Render's free tier from `render.yaml` (the API and a PostgreSQL database; Flyway builds the schema on start).
+The API runs on Render's free tier from `render.yaml`; the database is PostgreSQL on Neon's free plan, connected over
+SSL (Flyway builds the schema on start).
 The first request after 15 minutes idle wakes the server, which takes about a minute. The catalogue starts empty:
 register, then try the endpoints from Swagger UI. A test (`RenderBlueprintStartupTest`) starts the app with exactly
 this blueprint on PostgreSQL in CI, so a broken deployment setting fails the build, not the deploy.
