@@ -8,7 +8,6 @@ import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -20,8 +19,7 @@ import java.util.List;
 @Configuration
 public class OpenApiConfig {
 
-    @Value("${server.port:8080}")
-    private String serverPort;
+    private static final String REPOSITORY_URL = "https://github.com/akifkeklik/ecommerce-backend";
 
     @Bean
     public OpenAPI customOpenAPI() {
@@ -31,22 +29,17 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("E-Commerce API")
                         .version("1.0.0")
-                        .description("Professional E-Commerce Backend API with Spring Boot")
-                        .termsOfService("https://example.com/terms")
+                        .description("Orders with row-locked stock, discount codes, payments with refunds and "
+                                + "moderated reviews. Register, log in, then use Authorize with the access token.")
                         .contact(new Contact()
-                                .name("E-Commerce Support")
-                                .email("support@ecommerce.com")
-                                .url("https://ecommerce.com"))
+                                .name("Source code and documentation")
+                                .url(REPOSITORY_URL))
                         .license(new License()
                                 .name("MIT License")
-                                .url("https://opensource.org/licenses/MIT")))
-                .servers(List.of(
-                        new Server()
-                                .url("http://localhost:" + serverPort)
-                                .description("Local Development Server"),
-                        new Server()
-                                .url("https://api.ecommerce.com")
-                                .description("Production Server")))
+                                .url(REPOSITORY_URL + "/blob/main/LICENSE")))
+                // A relative server makes "Try it out" call the host that serves this page,
+                // whether that is localhost or the hosted demo.
+                .servers(List.of(new Server().url("/").description("This server")))
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
                 .components(new Components()
                         .addSecuritySchemes(securitySchemeName,
